@@ -1,0 +1,68 @@
+# IDE specific files
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Android specific
+*.iml
+.gradle/
+local.properties
+*.apk
+*.aab
+*.ap_
+*.dex
+*.class
+*.jar
+*.war
+*.ear
+*.zip
+*.tar.gz
+*.rar
+*.7z
+
+# Build folders
+build/
+app/build/
+
+# Logs
+*.log
+
+# Local configuration
+local.properties
+gradle.properties
+.env
+.env.local
+.env.*.local
+
+# Keystore files
+*.jks
+*.keystore
+keystore/
+
+# Google Services (e.g. APIs or Firebase)
+google-services.json
+
+# Version control
+vcs.xml
+
+# Android Studio captures folder
+captures/
+
+# External native build folder
+.externalNativeBuild/
+.cxx/
+
+# lint
+lint/intermediates/
+lint/generated/
+lint/outputs/
+lint/tmp/
+
+# Android Profiling
+*.hprof
+
+# Backup files
+*.bak
+*.tmp
+*~
