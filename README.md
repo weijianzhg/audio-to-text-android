@@ -2,6 +2,9 @@
 
 A simple Android application that converts audio to text using OpenAI's Whisper API. This app allows users to either record audio directly or select an audio file from their device for transcription.
 
+<img src="img/screenshot.png" width="300" alt="App Screenshot">
+
+
 ## Features
 
 - Record audio directly within the app
@@ -22,7 +25,7 @@ A simple Android application that converts audio to text using OpenAI's Whisper 
 
 1. Clone the repository:
 ```bash
-git clone https://github.com/yourusername/audio-transcriber-android.git
+git clone https://github.com/weijianzhg/audio-to-text-android
 ```
 
 2. Open the project in Android Studio
@@ -80,10 +83,4 @@ Contributions are welcome! Please feel free to submit a Pull Request.
 
 ## License
 
-[Add your license information here]
-
-## Acknowledgments
-
-- OpenAI for the Whisper API
-- Material Design components
-- OkHttp library
+MIT
