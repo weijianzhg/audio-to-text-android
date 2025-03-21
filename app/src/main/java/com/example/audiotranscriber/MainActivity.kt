@@ -1,10 +1,12 @@
 package com.example.audiotranscriber
 
 import android.Manifest
+import android.content.ContentValues
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.media.MediaRecorder
 import android.net.Uri
+import android.os.Build
 import android.os.Bundle
 import android.os.Environment
 import android.provider.MediaStore
@@ -190,42 +192,50 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun saveTranscription() {
-        val transcription = binding.transcriptionText.text.toString()
-        if (transcription.isBlank()) {
+        if (binding.transcriptionText.text.isBlank()) {
             Toast.makeText(this, "No transcription to save", Toast.LENGTH_SHORT).show()
             return
         }
 
-        lifecycleScope.launch(Dispatchers.IO) {
-            try {
-                val timestamp = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(Date())
-                val fileName = "transcription_$timestamp.txt"
+        try {
+            val timestamp = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(Date())
+            val fileName = "transcription_$timestamp.txt"
 
-                // Create a directory for transcriptions if it doesn't exist
-                val transcriptionsDir = File(getExternalFilesDir(Environment.DIRECTORY_DOCUMENTS), "transcriptions")
-                if (!transcriptionsDir.exists()) {
-                    transcriptionsDir.mkdirs()
-                }
+            // Create a temporary file in app's cache
+            val tempFile = File(cacheDir, fileName)
+            tempFile.writeText(binding.transcriptionText.text.toString())
 
-                val file = File(transcriptionsDir, fileName)
-                file.writeText(transcription)
-
-                withContext(Dispatchers.Main) {
-                    Toast.makeText(
-                        this@MainActivity,
-                        "Transcription saved to: ${file.absolutePath}",
-                        Toast.LENGTH_LONG
-                    ).show()
-                }
-            } catch (e: Exception) {
-                withContext(Dispatchers.Main) {
-                    Toast.makeText(
-                        this@MainActivity,
-                        "Failed to save transcription: ${e.message}",
-                        Toast.LENGTH_LONG
-                    ).show()
-                }
+            // Save to Downloads using MediaStore
+            val values = ContentValues().apply {
+                put(MediaStore.Downloads.DISPLAY_NAME, fileName)
+                put(MediaStore.Downloads.MIME_TYPE, "text/plain")
+                put(MediaStore.Downloads.IS_PENDING, 1)
             }
+
+            val collection = MediaStore.Downloads.getContentUri(MediaStore.VOLUME_EXTERNAL_PRIMARY)
+            val itemUri = contentResolver.insert(collection, values)
+
+            itemUri?.let { uri ->
+                contentResolver.openOutputStream(uri)?.use { outputStream ->
+                    tempFile.inputStream().use { inputStream ->
+                        inputStream.copyTo(outputStream)
+                    }
+                }
+                // Update the pending flag
+                values.clear()
+                values.put(MediaStore.Downloads.IS_PENDING, 0)
+                contentResolver.update(uri, values, null, null)
+
+                Toast.makeText(this, "Transcription saved to Downloads/$fileName", Toast.LENGTH_LONG).show()
+            } ?: run {
+                Toast.makeText(this, "Failed to save transcription", Toast.LENGTH_LONG).show()
+            }
+
+            // Clean up temp file
+            tempFile.delete()
+        } catch (e: Exception) {
+            e.printStackTrace()
+            Toast.makeText(this, "Failed to save transcription: ${e.message}", Toast.LENGTH_LONG).show()
         }
     }
 
@@ -250,9 +260,11 @@ class MainActivity : AppCompatActivity() {
         grantResults: IntArray
     ) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
-        if (requestCode == RECORD_AUDIO_PERMISSION) {
-            if (grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                Toast.makeText(this, "Audio Permission Granted", Toast.LENGTH_SHORT).show()
+        when (requestCode) {
+            RECORD_AUDIO_PERMISSION -> {
+                if (grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                    Toast.makeText(this, "Audio Permission Granted", Toast.LENGTH_SHORT).show()
+                }
             }
         }
     }
@@ -273,5 +285,9 @@ class MainActivity : AppCompatActivity() {
         if (isRecording) {
             stopRecording()
         }
+    }
+
+    companion object {
+        private const val STORAGE_PERMISSION_CODE = 1002
     }
 }
